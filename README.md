@@ -61,6 +61,10 @@ https://www.alphavantage.co/documentation/
 ### Yahoo Finance (Prices, Fundamentals, Holders, Options, News(?))
 https://pypi.org/project/yfinance/
 
+### FRED (Economic Indicators)
+https://fred.stlouisfed.org/docs/api/fred/
+https://pypi.org/project/fredapi/
+
 ### Twitter (X)
 NO HISTORIC TWEETS ANYMORE ;/
 free version: max 1500 tweets read
