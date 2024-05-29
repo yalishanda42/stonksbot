@@ -1,0 +1,5 @@
+git+https://github.com/RomelTorres/alpha_vantage@2122903650d608c612bd9ddabd683f598956222f
+# llama-index==0.10.39
+matplotlib==3.9.0
+python-dotenv==1.0.1
+# tweepy==4.14.0
