@@ -1,19 +1,7 @@
 # Profit?
 
-## Stonks to gather info on:
-* AAPL
-* MSFT
-* AMZN
-* NVDA
-* TSLA
-* RDDT (test only?)
-* GME
-* TSM
-* INTC
-
 ## Features
 
-For every minute:
 * Stock prices:
     * Open
     * High
@@ -49,8 +37,14 @@ For every minute:
     * Institutional
     * Insider
     * Mutual funds
+* Analysis/Prediction?
+    * Buy/Sell/Hold Percentages
+    * 1Y Target price
 * News:
-    * ...?
+    * Overall sentiment (mean, std, min, max) - precomputed from Alpha Vantage
+    * Different time periods sentiment (day, week, month, year) - computed by LLM reading articles
+* Misc
+    * Is stock market open / Is after hours / Is pre market / Is there a holiday
 
 
 ## APIs
@@ -73,3 +67,13 @@ free version: max 1500 tweets read
 Anthropic's Claude 3
 
 
+## Stonks to gather info on:
+* AAPL
+* MSFT
+* AMZN
+* NVDA
+* TSLA
+* RDDT (test only?)
+* GME
+* TSM
+* INTC
