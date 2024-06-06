@@ -43,7 +43,16 @@
 * News:
     * Overall sentiment (mean, std, min, max) - precomputed from Alpha Vantage
     * Different time periods sentiment (day, week, month, year) - computed by LLM reading articles
-* Misc
+    * Finding and parsing said company's recent news?
+* Psychological
+    * Fear & Greed Index
+    * Put/Call Ratio
+    * Is the number round, whole, etc (because of stop/limit orders)
+    * Is ATH
+    * Is a buy point defined by various indicators, such as 'cup without handle', etc
+* Social
+    * Congressmen trading?
+* Misc / Derived features
     * Is stock market open / Is after hours / Is pre market / Is there a holiday
 
 
