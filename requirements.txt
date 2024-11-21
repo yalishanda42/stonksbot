@@ -4,4 +4,4 @@ fredapi==0.5.2
 matplotlib==3.9.0
 python-dotenv==1.0.1
 # tweepy==4.14.0
-yfinance==0.2.40
+yfinance==0.2.50
