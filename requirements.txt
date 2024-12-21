@@ -1,2 +1,2 @@
-matplotlib==3.9.0
+matplotlib==3.10.0
 python-dotenv==1.0.1
