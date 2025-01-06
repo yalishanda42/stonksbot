@@ -37,20 +37,30 @@ def do_simulation(
 
     money = 0
     results = []
+    skipped_days = 0
 
     df_asset = asset_data_service.daily_candles_data(start_date, end_date, asset)
 
     for timestamp in tqdm(df_asset.index.get_level_values("timestamp").unique()):
         day = timestamp.to_pydatetime()
         df_day_stock = asset_data_service.full_day_minutely_data(day, asset)
-        opening_minute_idx, legs = opening_strategy(df_day_stock)
+        opening_timestamp, legs = opening_strategy(df_day_stock)
         df_day_options = options_data_service.full_day_minutely_data(day, [leg.option for leg in legs])
-        df_day_remaining = df_day_options.iloc[opening_minute_idx:]
-        positions = [leg.opening_position(df_day_remaining.iloc[0]["open"]) for leg in legs]
+
+        # data is incomplete, so if opening_timestamp is before the beginning of the options data, skip this day
+        if opening_timestamp < df_day_options.index.get_level_values("timestamp").min():
+            skipped_days += 1
+            results.append(money)  # keep the same value as the previous day, for the sake of shape-matching
+            continue
+
+        positions = [leg.opening_position(float(df_day_options.loc[(leg.option.ticker, opening_timestamp), "open"])) for leg in legs]  # type: ignore
+        df_day_remaining = df_day_options[df_day_options.index.get_level_values("timestamp") >= opening_timestamp]
         potential_profits = closing_profit_each_timestamp(positions, df_day_remaining)
         closing_profit = closing_strategy(potential_profits)
         money += closing_profit
         results.append(money)
+
+    print(f"Skipped {skipped_days} days due to incomplete data.")
 
     return pd.DataFrame(results, index=df_asset.index.get_level_values("timestamp").unique(), columns=["total_profit"])
 
@@ -59,7 +69,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     from services.alpaca import AlpacaAssetDataService, AlpacaOptionsDataService
-    from strategies import opening_strategy_iron_condor_specific_minute_idx, closing_strategy_limit
+    from strategies import *
 
     start_date = datetime(2024, 2, 5)  # farthest back we have data for
     end_date = datetime(2024, 12, 31)
@@ -67,8 +77,8 @@ if __name__ == "__main__":
 
     asset_data_service = AlpacaAssetDataService()
     options_data_service = AlpacaOptionsDataService()
-    opening_strategy = opening_strategy_iron_condor_specific_minute_idx(0)
-    closing_strategy = closing_strategy_limit(200)
+    opening_strategy = opening_strategy_iron_condor_specific_minute_idx(30)
+    closing_strategy = closing_strategy_limit_or_last_n(150, 15)
 
     profit_df = do_simulation(
         start_date,

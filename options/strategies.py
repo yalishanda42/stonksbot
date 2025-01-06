@@ -14,7 +14,7 @@ OpeningStrategyType = Callable[
     [pd.DataFrame],  # dataframe with minute-level underlying asset price data for the day (sorted by timestamp ascendingly, no missing timestamps)
     # -> returns:
     tuple[
-        int,  # index of the minute when the positions are opened (as in the dataframe)
+        pd.Timestamp,  # timestamp of the opening minute
         list[OptionLeg]  # list of legs to open
     ]
 ]
@@ -23,13 +23,12 @@ OpeningStrategyType = Callable[
 def opening_strategy_iron_condor_specific_minute_idx(
     minute_idx: int,
 ) -> OpeningStrategyType:
-    """
-    Return an opening strategy that opens the given legs at the specified minute index.
-    """
-    def strategy(df: pd.DataFrame) -> tuple[int, list[OptionLeg]]:
-        asset = df.index.get_level_values("symbol").unique()[0]
-        opening_minute_price = df.iloc[minute_idx]["open"]
-        current_day: datetime = df.index.get_level_values("timestamp").unique()[0].to_pydatetime().replace(
+    def strategy(df_day_asset: pd.DataFrame) -> tuple[pd.Timestamp, list[OptionLeg]]:
+        asset = df_day_asset.index.get_level_values("symbol").unique()[0]
+        ts = df_day_asset.index.get_level_values("timestamp").unique()[minute_idx]
+
+        opening_minute_price = float(df_day_asset.loc[(asset, ts), "open"])  # type: ignore
+        current_day: datetime = ts.to_pydatetime().replace(
             hour=0, minute=0, second=0, microsecond=0
         )
         legs = iron_condor_legs_same_shorts_price(
@@ -39,7 +38,7 @@ def opening_strategy_iron_condor_specific_minute_idx(
             wingspan=0.015,
             dte=current_day  # 0DTE
         )
-        return minute_idx, legs
+        return ts, legs
     return strategy
 
 
@@ -85,5 +84,14 @@ def closing_strategy_limit_stoploss(limit_value: float, stoploss_value: float) -
 
 def closing_strategy_last_n(n: int) -> ClosingStrategyType:
     def strategy(values: NDArray) -> float:
+        return values[-n]
+    return strategy
+
+
+def closing_strategy_limit_or_last_n(limit_value: float, n: int) -> ClosingStrategyType:
+    def strategy(values: NDArray) -> float:
+        for value in values:
+            if value >= limit_value:
+                return value
         return values[-n]
     return strategy

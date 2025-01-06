@@ -1,0 +1,6 @@
+alpaca-py
+plotly
+matplotlib
+pandas
+numpy
+tqdm
