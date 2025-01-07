@@ -72,13 +72,13 @@ if __name__ == "__main__":
     from strategies import *
 
     start_date = datetime(2024, 2, 5)  # farthest back we have data for
-    end_date = datetime(2024, 12, 31)
+    end_date = datetime(2025, 1, 6)
     asset = "SPY"
 
     asset_data_service = AlpacaAssetDataService()
     options_data_service = AlpacaOptionsDataService()
-    opening_strategy = opening_strategy_iron_condor_specific_minute_idx(30)
-    closing_strategy = closing_strategy_limit_or_last_n(150, 15)
+    opening_strategy = opening_strategy_iron_condor_specific_minute_idx(60)
+    closing_strategy = closing_strategy_last_n(30)
 
     profit_df = do_simulation(
         start_date,

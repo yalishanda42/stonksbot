@@ -32,7 +32,7 @@ def opening_strategy_iron_condor_specific_minute_idx(
             hour=0, minute=0, second=0, microsecond=0
         )
         legs = iron_condor_legs_same_shorts_price(
-            n_contracts=1,
+            n_contracts=10,
             asset=asset,
             shorts_strike_price=opening_minute_price,
             wingspan=0.015,
