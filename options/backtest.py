@@ -28,21 +28,19 @@ def closing_profit_each_timestamp(positions: list[OptionPosition], df: pd.DataFr
     return np.array(profits)
 
 
-def do_simulation(
+def daily_potential_pnl(
     start_date: datetime,
     end_date: datetime,
     asset: str,
     asset_data_service: AssetDataService,
     options_data_service: OptionsDataService,
     opening_strategy: OpeningStrategyType,
-    closing_strategy: ClosingStrategyType,
-) -> tuple[pd.DataFrame, list[NDArray]]:
-    """Perform a simulation of the given strategy.
-    Return the value of the portfolio at the end of each day,
-    as well as the daily profit/loss position movements for analysis purposes."""
+) -> list[NDArray]:
+    """Perform a simulation of the given opening strategy.
+    Return the intra-day profit/loss position movements (1-minute granularity)"""
 
-    money = 0
-    results = []
+    # money = 0
+    # results = []
     daily_pnl_movements = []
     skipped_days = 0
 
@@ -57,7 +55,9 @@ def do_simulation(
         # data is incomplete, so if opening_timestamp is before the beginning of the options data, skip this day
         if opening_timestamp < df_day_options.index.get_level_values("timestamp").min():
             skipped_days += 1
-            results.append(money)  # keep the same value as the previous day, for the sake of shape-matching
+            # results.append(money)
+            # add na value for the sake of shape-matching
+            daily_pnl_movements.append(np.nan)
             continue
 
         positions = [leg.opening_position(float(df_day_options.loc[(leg.option.ticker, opening_timestamp), "open"])) for leg in legs]  # type: ignore
@@ -65,16 +65,66 @@ def do_simulation(
         potential_profits = closing_profit_each_timestamp(positions, df_day_remaining)
         daily_pnl_movements.append(potential_profits)
 
+    if skipped_days > 0:
+        print(f"Skipped {skipped_days} days due to incomplete data. (inserted np.nan for them)")
+
+    return daily_pnl_movements
+
+
+def perform_closing_strategy(
+    closing_strategy: ClosingStrategyType,
+    daily_pnl_movements: list[NDArray],
+    starting_money = 0,
+) -> pd.DataFrame:
+    """Perform the closing strategy on the given daily potential P&L movements.
+    Return the total value of the portfolio at the end of each day"""
+
+    money = starting_money
+    results = []
+
+    for potential_profits in daily_pnl_movements:
+        if np.isnan(potential_profits).all():
+            results.append(money)
+            continue
+        
         closing_profit = closing_strategy(potential_profits)
         money += closing_profit
         results.append(money)
 
-    if skipped_days > 0:
-        print(f"Skipped {skipped_days} days due to incomplete data.")
+    results_df = pd.DataFrame(results, index=range(len(daily_pnl_movements)), columns=["total_profit"])
 
-    results_df = pd.DataFrame(results, index=df_asset.index.get_level_values("timestamp").unique(), columns=["total_profit"])
+    return results_df
 
-    return results_df, daily_pnl_movements
+
+def do_simulation(
+    start_date: datetime,
+    end_date: datetime,
+    asset: str,
+    asset_data_service: AssetDataService,
+    options_data_service: OptionsDataService,
+    opening_strategy: OpeningStrategyType,
+    closing_strategy: ClosingStrategyType,
+) -> tuple[pd.DataFrame, list[NDArray]]:
+    """Perform a simulation of the given strategies.
+    Return the value of the portfolio at the end of each day,
+    as well as the intra-day profit/loss position movements (1-minute granularity)"""
+
+    daily_pnl_movements = daily_potential_pnl(
+        start_date,
+        end_date,
+        asset,
+        asset_data_service,
+        options_data_service,
+        opening_strategy,
+    )
+
+    profit_df = perform_closing_strategy(
+        closing_strategy,
+        daily_pnl_movements,
+    )
+
+    return profit_df, daily_pnl_movements
+
 
 
 if __name__ == "__main__":
@@ -84,13 +134,13 @@ if __name__ == "__main__":
     from strategies import *
 
     start_date = datetime(2024, 4, 1)  # farthest back we have data for from Alpaca is 2024-02-05
-    end_date = datetime(2024, 5, 1)
+    end_date = datetime(2024, 4, 10)
     asset = "SPY"
 
     asset_data_service = AlpacaAssetDataService()
     options_data_service = AlpacaOptionsDataService()
-    opening_strategy = opening_strategy_iron_condor_specific_minute_idx(3)
-    closing_strategy = closing_strategy_limit_or_stoploss_or_last_n(500, 2000, 30)
+    opening_strategy = opening_strategy_iron_condor_specific_minute_idx(2)
+    closing_strategy = closing_strategy_limit_or_stoploss_or_last_n(400, 1000, 30)
 
     profit_df, _ = do_simulation(
         start_date,
