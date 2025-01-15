@@ -76,7 +76,7 @@ def closing_strategy_limit_stoploss(limit_value: float, stoploss_value: float) -
         for value in values:
             if value >= limit_value:
                 return value
-            if value <= stoploss_value:
+            if value <= -stoploss_value:
                 return value
         return values[-1]
     return strategy
@@ -102,7 +102,7 @@ def closing_strategy_limit_or_stoploss_or_last_n(limit_value: float, stoploss_va
         for value in values[:-n]:
             if value >= limit_value:
                 return value
-            if value <= stoploss_value:
+            if value <= -stoploss_value:
                 return value
         return values[-n]
     return strategy

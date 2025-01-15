@@ -20,6 +20,11 @@ def closing_profit_each_timestamp(positions: list[OptionPosition], df: pd.DataFr
         )
         for timestamp in timestamps
     ]
+
+    # debug plot
+    # plt.plot(timestamps, profits)
+    # plt.show()
+
     return np.array(profits)
 
 
@@ -60,7 +65,8 @@ def do_simulation(
         money += closing_profit
         results.append(money)
 
-    print(f"Skipped {skipped_days} days due to incomplete data.")
+    if skipped_days > 0:
+        print(f"Skipped {skipped_days} days due to incomplete data.")
 
     return pd.DataFrame(results, index=df_asset.index.get_level_values("timestamp").unique(), columns=["total_profit"])
 
@@ -71,14 +77,14 @@ if __name__ == "__main__":
     from services.alpaca import AlpacaAssetDataService, AlpacaOptionsDataService
     from strategies import *
 
-    start_date = datetime(2024, 2, 5)  # farthest back we have data for
-    end_date = datetime(2025, 1, 6)
+    start_date = datetime(2024, 4, 1)  # farthest back we have data for from Alpaca is 2024-02-05
+    end_date = datetime(2024, 5, 1)
     asset = "SPY"
 
     asset_data_service = AlpacaAssetDataService()
     options_data_service = AlpacaOptionsDataService()
-    opening_strategy = opening_strategy_iron_condor_specific_minute_idx(60)
-    closing_strategy = closing_strategy_last_n(30)
+    opening_strategy = opening_strategy_iron_condor_specific_minute_idx(3)
+    closing_strategy = closing_strategy_limit_or_stoploss_or_last_n(500, 2000, 30)
 
     profit_df = do_simulation(
         start_date,
@@ -89,6 +95,10 @@ if __name__ == "__main__":
         opening_strategy,
         closing_strategy,
     )
+
+    print("Simulation complete.")
+    daily_profit_df = profit_df.dropna().diff()
+    print(f"Winning rate: {daily_profit_df[daily_profit_df['total_profit'] > 0].shape[0] / daily_profit_df.shape[0]:.2%}")
     
     fig, ax = plt.subplots()
     profit_df.plot(ax=ax)
