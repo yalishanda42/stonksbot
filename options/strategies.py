@@ -97,6 +97,14 @@ def closing_strategy_limit_or_last_n(limit_value: float, n: int) -> ClosingStrat
     return strategy
 
 
+def closing_strategy_stoploss_or_last_n(stoploss_value: float, n: int) -> ClosingStrategyType:
+    def strategy(values: NDArray) -> float:
+        for value in values[:-n]:
+            if value <= -stoploss_value:
+                return value
+        return values[-n]
+    return strategy
+
 def closing_strategy_limit_or_stoploss_or_last_n(limit_value: float, stoploss_value: float, n: int) -> ClosingStrategyType:
     def strategy(values: NDArray) -> float:
         for value in values[:-n]:

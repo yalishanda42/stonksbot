@@ -36,12 +36,14 @@ def do_simulation(
     options_data_service: OptionsDataService,
     opening_strategy: OpeningStrategyType,
     closing_strategy: ClosingStrategyType,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, list[NDArray]]:
     """Perform a simulation of the given strategy.
-    Return the value of the portfolio at the end of each day."""
+    Return the value of the portfolio at the end of each day,
+    as well as the daily profit/loss position movements for analysis purposes."""
 
     money = 0
     results = []
+    daily_pnl_movements = []
     skipped_days = 0
 
     df_asset = asset_data_service.daily_candles_data(start_date, end_date, asset)
@@ -61,6 +63,8 @@ def do_simulation(
         positions = [leg.opening_position(float(df_day_options.loc[(leg.option.ticker, opening_timestamp), "open"])) for leg in legs]  # type: ignore
         df_day_remaining = df_day_options[df_day_options.index.get_level_values("timestamp") >= opening_timestamp]
         potential_profits = closing_profit_each_timestamp(positions, df_day_remaining)
+        daily_pnl_movements.append(potential_profits)
+
         closing_profit = closing_strategy(potential_profits)
         money += closing_profit
         results.append(money)
@@ -68,7 +72,9 @@ def do_simulation(
     if skipped_days > 0:
         print(f"Skipped {skipped_days} days due to incomplete data.")
 
-    return pd.DataFrame(results, index=df_asset.index.get_level_values("timestamp").unique(), columns=["total_profit"])
+    results_df = pd.DataFrame(results, index=df_asset.index.get_level_values("timestamp").unique(), columns=["total_profit"])
+
+    return results_df, daily_pnl_movements
 
 
 if __name__ == "__main__":
@@ -86,7 +92,7 @@ if __name__ == "__main__":
     opening_strategy = opening_strategy_iron_condor_specific_minute_idx(3)
     closing_strategy = closing_strategy_limit_or_stoploss_or_last_n(500, 2000, 30)
 
-    profit_df = do_simulation(
+    profit_df, _ = do_simulation(
         start_date,
         end_date,
         asset,
