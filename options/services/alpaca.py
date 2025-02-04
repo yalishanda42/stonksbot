@@ -45,8 +45,8 @@ class AlpacaOptionsDataService(OptionsDataService):
         full_day_opts_nomissing_df[["volume", "vwap", "trade_count"]] = full_day_opts_nomissing_df[["volume", "vwap", "trade_count"]].fillna(0)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            # interpolate missing prices with latest known:
-            full_day_opts_nomissing_df = full_day_opts_nomissing_df.fillna(method='ffill')  # type: ignore
+            # interpolate missing prices with latest known within each symbol group:
+            full_day_opts_nomissing_df = full_day_opts_nomissing_df.groupby('symbol').fillna(method='ffill')  # type: ignore
             # if still no info for the whole period of some ticker, fill with $0.01:
             full_day_opts_nomissing_df = full_day_opts_nomissing_df.fillna(0.01)  
         return full_day_opts_nomissing_df
