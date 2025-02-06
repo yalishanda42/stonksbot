@@ -134,3 +134,47 @@ def closing_strategy_limit_or_stoploss_after_n_or_last_m(
                 return value
         return values[-last_m]
     return strategy
+
+
+def closing_strategy_nth_minute(
+    n: int,
+) -> ClosingStrategyType:
+    def strategy(values: NDArray) -> float:
+        return values[n]
+    return strategy
+
+
+def closing_strategy_limit_or_stoploss_or_nth_minute(
+    limit_value: float,
+    stoploss_value: float,
+    n: int,
+) -> ClosingStrategyType:
+    stoploss_value = abs(stoploss_value)
+    def strategy(values: NDArray) -> float:
+        n_capped = min(n, len(values)-1)
+        for value in values[:n_capped+1]:
+            if value >= limit_value:
+                return value
+            if value <= -stoploss_value:
+                return value
+        return values[n_capped]
+    return strategy
+
+
+def closing_strategy_limit_or_stoploss_after_n_ormth_minute(
+    limit_value: float,
+    stoploss_value: float,
+    n: int,
+    m: int,
+) -> ClosingStrategyType:
+    stoploss_value = abs(stoploss_value)
+
+    def strategy(values: NDArray) -> float:
+        m_capped = min(m, len(values)-1)
+        for i, value in enumerate(values[:m_capped+1]):
+            if value >= limit_value:
+                return value
+            if value <= -stoploss_value and i >= n:
+                return value
+        return values[m_capped]
+    return strategy
