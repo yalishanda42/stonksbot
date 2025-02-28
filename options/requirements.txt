@@ -8,5 +8,5 @@ tqdm
 gradio==4.38.0
 pandas~=2.2.2
 pydantic==2.9.0
-fastapi==0.112.2
+fastapi==0.115.9
 pydantic-core==2.23.2
