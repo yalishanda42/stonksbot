@@ -5,6 +5,7 @@ pandas
 python-dotenv
 numpy
 tqdm
+seaborn
 # for the gradio app: (specific old versions because: https://github.com/gradio-app/gradio/issues/9322)
 gradio==4.38.0
 pandas~=2.2.2
