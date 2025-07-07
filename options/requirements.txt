@@ -2,6 +2,7 @@ alpaca-py
 plotly
 matplotlib
 pandas
+python-dotenv
 numpy
 tqdm
 # for the gradio app: (specific old versions because: https://github.com/gradio-app/gradio/issues/9322)
