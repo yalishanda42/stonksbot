@@ -1,0 +1,20 @@
+[project]
+name = "options"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "alpaca-py>=0.43.0",
+    "fastapi==0.112.2",
+    "matplotlib>=3.9.4",
+    "numpy>=2.0.2",
+    "pandas>=2.2.3",
+    "plotly>=6.3.1",
+    "pydantic==2.9.0",
+    "pydantic-core==2.23.2",
+    "python-dotenv>=1.1.1",
+    "seaborn>=0.13.2",
+    "streamlit>=1.50.0",
+    "tqdm>=4.67.1",
+]

@@ -2,13 +2,11 @@ import json
 
 from strategies import *
 
-from gradio.layouts import Column
-from gradio.blocks import Blocks
-from gradio.components import LinePlot, Slider
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
+import streamlit as st
 
 
 with open("daily_movements_open2.json", "r") as f:
@@ -41,36 +39,35 @@ def process_fn(profit, stoploss, wait_before_stoploss, max_closing_minute) -> pd
     pnl = calculate_pnl(profit, stoploss, wait_before_stoploss, max_closing_minute)
     return pnl_to_df(pnl)
 
-with Blocks() as blocks:
-    with Column():
-        profit = Slider(
-            minimum=10, maximum=5000, value=400, step=50, 
-            label="Profit Limit ($)"
-        )
-        stoploss = Slider(
-            minimum=-5000, maximum=-10, value=-400, step=50, 
-            label="Stop Loss ($)"
-        )
-        wait_before_stoploss = Slider(
-            minimum=0, maximum=350, value=0, step=1, 
-            label="Wait Before Setting Stop Loss (minute idx)"
-        )
-        max_closing_minute = Slider(
-            minimum=0, maximum=350, value=300, step=1, 
-            label="Max Closing Minute (idx)"
-        )
-    
-    plot = LinePlot(
-        process_fn,
-        x="day",
-        y="pnl",
-        inputs=[profit, stoploss, wait_before_stoploss, max_closing_minute],
-        title="Cumulative PnL ($)",
-        x_title="Day (idx)",
-        y_title="$",
-        height=400,
-    )
+st.set_page_config(page_title="Interactive PnL Analysis", layout="wide")
+st.title("Interactive PnL Analysis")
 
+sidebar = st.sidebar
+profit = sidebar.slider("Profit Limit ($)", min_value=10, max_value=5000, value=400, step=50)
+stoploss = sidebar.slider("Stop Loss ($)", min_value=-5000, max_value=-10, value=-400, step=50)
+wait_before_stoploss = sidebar.slider(
+    "Wait Before Setting Stop Loss (minute idx)", min_value=0, max_value=350, value=0, step=1
+)
+max_closing_minute = sidebar.slider(
+    "Max Closing Minute (idx)", min_value=0, max_value=350, value=300, step=1
+)
 
+df = process_fn(profit, stoploss, wait_before_stoploss, max_closing_minute)
 
-blocks.launch()
+# Plot cumulative PnL
+st.subheader("Cumulative PnL ($)")
+st.line_chart(df.set_index("day")["pnl"], height=400, use_container_width=True)
+
+# Key numbers
+final_pnl = float(df["pnl"].iloc[-1]) if len(df) > 0 else 0.0
+avg_daily = float(df["pnl"].diff().dropna().mean()) if len(df) > 1 else 0.0
+with st.columns(3)[0]:
+    st.metric("Final Cumulative PnL ($)", f"{final_pnl:,.2f}")
+with st.columns(3)[1]:
+    st.metric("Avg PnL per Day ($)", f"{avg_daily:,.2f}")
+with st.columns(3)[2]:
+    st.metric("Days", len(df))
+
+# Show recent rows if user wants
+with st.expander("Show data (last 200 rows)"):
+    st.dataframe(df.tail(200), use_container_width=True)
